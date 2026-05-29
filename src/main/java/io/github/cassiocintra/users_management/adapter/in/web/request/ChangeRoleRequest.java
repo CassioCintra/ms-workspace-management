@@ -1,0 +1,8 @@
+package io.github.cassiocintra.users_management.adapter.in.web.request;
+
+import io.github.cassiocintra.users_management.domain.WorkspaceRole;
+import jakarta.validation.constraints.NotNull;
+
+public record ChangeRoleRequest(
+        @NotNull WorkspaceRole role
+) {}
