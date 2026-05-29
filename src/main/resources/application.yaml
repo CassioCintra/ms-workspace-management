@@ -1,0 +1,60 @@
+#file: noinspection YAMLSchemaValidation,SpellCheckingInspection
+spring:
+  application:
+    name: ms-users-management
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ms_users_management
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        multiTenancy: SCHEMA
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
+    schemas: public
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/ms-users-management
+  kafka:
+    bootstrap-servers: localhost:9092
+  mail:
+    host: localhost
+    port: 1025
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+users:
+  kafka:
+    topics:
+      user-invited: user.invited
+      token-revoked: token.revoked
+  invite:
+    base-url: http://localhost:8082/users/v1
+    expiration-hours: 72
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] [%X{correlator}] %-5level %logger{36} - %msg%n"
+  level:
+    io.github.cassiocintra: DEBUG
+
+server:
+  port: 8082
+  servlet:
+    context-path: /users/v1
