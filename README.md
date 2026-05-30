@@ -28,15 +28,13 @@ O serviço segue **arquitetura hexagonal** com as seguintes camadas:
 ```
 domain/                         ← entidades, enums, exceções (JDK puro)
 application/
-  TenantContext.java            ← contexto de workspace atual (ThreadLocal)
+  TenantContext.java            ← contexto de workspace e usuário por request (ThreadLocal)
   port/in/                      ← interfaces de casos de uso
   port/out/                     ← interfaces de repositórios e publishers
   service/                      ← orquestração dos casos de uso
 adapter/
   in/web/                       ← controllers REST, filtros, exception handler
   out/persistence/              ← JPA entities, Spring Data repositories
-  out/tenant/                   ← Hibernate multi-tenancy SPI
-  out/schema/                   ← provisionamento de schema por workspace
   out/messaging/                ← produtores Kafka
   out/mail/                     ← envio de e-mail via JavaMailSender
 ```
@@ -50,50 +48,32 @@ domain          ←  nunca importa camadas acima
 
 ---
 
-## Multi-tenancy: schema por workspace
+## Multi-tenancy: schema compartilhado
 
-Cada workspace possui seu próprio schema PostgreSQL isolado. O roteamento é automático via Hibernate.
+Todas as tabelas vivem no schema `public`. O isolamento por workspace é feito via coluna `workspace_id` em cada tabela, filtrada pelos adapters de persistência com base no `TenantContext`.
 
 ### Schemas
 
-| Schema              | Conteúdo                                          |
-|---------------------|---------------------------------------------------|
-| `public`            | `workspaces` — registro global de workspaces      |
-| `ws_{uuid}`         | `workspace_members`, `invites`, `api_tokens`      |
+| Schema    | Tabelas                                                                |
+|-----------|------------------------------------------------------------------------|
+| `public`  | `workspaces`, `workspace_members`, `invites`, `api_tokens`, `invite_tokens` |
 
-O nome do schema é derivado do UUID do workspace com hífens substituídos por underscores:
-```
-workspaceId: 550e8400-e29b-41d4-a716-446655440000
-schema:       ws_550e8400_e29b_41d4_a716_446655440000
-```
-
-### Como o roteamento funciona
+### Como o contexto de workspace funciona
 
 ```
 Request HTTP  →  BearerTokenAuthenticationFilter  (valida JWT com Keycloak)
-              →  TenantExtractorFilter             (lê claim workspace_id do JWT)
-                   TenantContext.setTenantId("ws_...")
+              →  TenantExtractorFilter             (lê claims do JWT)
+                   TenantContext.setWorkspaceId("uuid")
                    TenantContext.setUserId("sub")
-                   TenantContext.setWorkspaceId("uuid-bruto")
-              →  Hibernate abre sessão
-                   TenantIdentifierResolver.resolveCurrentTenantIdentifier()
-                     → lê TenantContext.getTenantId()
-                   SchemaMultiTenantConnectionProvider.getConnection(schema)
-                     → SET search_path TO ws_abc..., public
-              →  Queries vão automaticamente para o schema correto
+                   TenantContext.setUserEmail("email")
+                   TenantContext.setUserName("name")
+              →  Adapters de persistência
+                   workspaceId = UUID.fromString(TenantContext.getWorkspaceId())
+                   → todas as queries filtram por workspace_id automaticamente
               →  finally: TenantContext.clear()
 ```
 
-O fallback `public` no `search_path` garante que a tabela `workspaces`
-(com `@Table(schema = "public")`) seja sempre acessível independente do tenant ativo.
-
-### Provisionamento de workspace
-
-Ao criar um workspace (`POST /workspaces`), o serviço:
-1. Salva o registro em `public.workspaces`
-2. Cria o schema PostgreSQL via JDBC
-3. Executa as migrations de `db/migration-tenant/` via Flyway
-4. Adiciona o criador como membro com papel `ADMIN`
+Endpoints públicos que precisam do workspace (ex: aceitar convite) resolvem o `workspaceId` a partir da tabela `invite_tokens` e setam o `TenantContext` manualmente antes das operações de persistência.
 
 ---
 
@@ -112,9 +92,11 @@ Base path: `/users/v1`
 
 ### Convites
 
-| Método | Rota                          | Descrição              | Auth        |
-|--------|-------------------------------|------------------------|-------------|
-| `POST` | `/workspaces/{id}/invites`    | Convida por e-mail     | JWT (admin) |
+| Método  | Rota                          | Descrição                               | Auth         |
+|---------|-------------------------------|-----------------------------------------|--------------|
+| `POST`  | `/workspaces/{id}/invites`    | Convida por e-mail                      | JWT (admin)  |
+| `GET`   | `/invites/{token}/info`       | Retorna metadados do convite            | público      |
+| `POST`  | `/invites/accept`             | Aceita o convite e entra no workspace   | JWT          |
 
 ### Tokens de API
 
@@ -165,10 +147,14 @@ Tokens são gerados com `SecureRandom` (32 bytes → Base64url). Apenas o hash S
 ## Convites
 
 Ao convidar um usuário por e-mail:
-- Um token UUID é gerado e armazenado na tabela `invites`
-- O link de aceite é enviado por e-mail: `{base-url}/invite?token={uuid}`
+- Um token UUID é gerado, salvo em `invites` (tenant) e em `invite_tokens` (public, com vínculo ao workspace)
+- O link de aceite é enviado por e-mail: `{base-url}/invites/{token}/info`
 - O convite expira em **72 horas**
 - Não é possível ter dois convites `PENDING` para o mesmo e-mail no mesmo workspace (HTTP 409)
+
+Fluxo de aceite:
+1. `GET /invites/{token}/info` — qualquer pessoa com o link vê os metadados antes de autenticar
+2. `POST /invites/accept` — usuário autenticado aceita; o serviço valida token, expiração e correspondência de e-mail com o JWT, adiciona o membro e invalida o token
 
 ---
 
@@ -193,10 +179,13 @@ Ambos os eventos seguem o formato:
 
 ## Migrations Flyway
 
-| Localização                    | Escopo              | Quando executado                     |
-|--------------------------------|---------------------|--------------------------------------|
-| `db/migration/`                | Schema `public`     | Na inicialização da aplicação        |
-| `db/migration-tenant/`         | Schema `ws_{uuid}`  | Ao criar cada workspace (programático) |
+Todas as migrations ficam em `db/migration/` e são executadas pelo Flyway na inicialização da aplicação.
+
+| Versão | Arquivo                                  | Conteúdo                                              |
+|--------|------------------------------------------|-------------------------------------------------------|
+| V1     | `V1__create_workspaces.sql`              | Tabela `workspaces`                                   |
+| V2     | `V2__create_invite_tokens.sql`           | Tabela `invite_tokens` (mapa token → workspace)       |
+| V3     | `V3__create_workspace_scoped_tables.sql` | Tabelas `workspace_members`, `invites`, `api_tokens`  |
 
 ---
 

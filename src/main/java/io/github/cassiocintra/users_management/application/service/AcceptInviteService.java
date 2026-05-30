@@ -11,12 +11,14 @@ import io.github.cassiocintra.users_management.domain.WorkspaceMember;
 import io.github.cassiocintra.users_management.domain.exception.InviteEmailMismatchException;
 import io.github.cassiocintra.users_management.domain.exception.InviteExpiredException;
 import io.github.cassiocintra.users_management.domain.exception.InviteTokenNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class AcceptInviteService implements AcceptInviteUseCase {
 
@@ -35,24 +37,34 @@ public class AcceptInviteService implements AcceptInviteUseCase {
     @Override
     @Transactional
     public void acceptInvite(AcceptInviteCommand command) {
+        log.info("Accepting invite [token={}, userId={}, userEmail={}]",
+                command.token(), TenantContext.getUserId(), TenantContext.getUserEmail());
+
         UUID workspaceId = inviteTokenRepository.findWorkspaceIdByToken(command.token())
-                .orElseThrow(() -> new InviteTokenNotFoundException(command.token()));
+                .orElseThrow(() -> {
+                    log.warn("Invite token not found or already used [token={}]", command.token());
+                    return new InviteTokenNotFoundException(command.token());
+                });
 
         TenantContext.setWorkspaceId(workspaceId.toString());
+        log.debug("Workspace resolved from token [workspaceId={}]", workspaceId);
 
         Invite invite = inviteRepository.findByToken(command.token())
                 .orElseThrow(() -> new InviteTokenNotFoundException(command.token()));
 
         if (invite.getStatus() != InviteStatus.PENDING) {
+            log.warn("Invite already used or expired [token={}, status={}]", command.token(), invite.getStatus());
             throw new InviteTokenNotFoundException(command.token());
         }
 
         if (invite.getExpiresAt().isBefore(Instant.now())) {
+            log.warn("Invite expired [token={}, expiredAt={}]", command.token(), invite.getExpiresAt());
             throw new InviteExpiredException(command.token());
         }
 
         String jwtEmail = TenantContext.getUserEmail();
         if (jwtEmail != null && !jwtEmail.equalsIgnoreCase(invite.getEmail())) {
+            log.warn("Email mismatch on invite accept [jwtEmail={}, inviteEmail={}]", jwtEmail, invite.getEmail());
             throw new InviteEmailMismatchException();
         }
 
@@ -66,5 +78,8 @@ public class AcceptInviteService implements AcceptInviteUseCase {
 
         inviteRepository.save(invite.accept());
         inviteTokenRepository.deleteByToken(command.token());
+
+        log.info("Invite accepted — member added [userId={}, workspaceId={}, role={}]",
+                TenantContext.getUserId(), workspaceId, invite.getRole());
     }
 }
