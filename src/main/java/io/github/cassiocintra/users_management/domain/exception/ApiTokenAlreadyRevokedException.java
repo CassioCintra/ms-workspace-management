@@ -4,7 +4,11 @@ import java.util.UUID;
 
 public class ApiTokenAlreadyRevokedException extends RuntimeException {
 
-    public ApiTokenAlreadyRevokedException(UUID id) {
-        super("API token already revoked: " + id);
+    private ApiTokenAlreadyRevokedException(String message) {
+        super(message);
+    }
+
+    public static ApiTokenAlreadyRevokedException alreadyRevoked(UUID id) {
+        return new ApiTokenAlreadyRevokedException("API token already revoked: " + id);
     }
 }

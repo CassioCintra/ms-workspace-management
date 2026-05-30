@@ -99,7 +99,7 @@ class ApiTokenControllerTest {
     @WithMockUser
     void shouldReturn404WhenTokenNotFound() throws Exception {
         UUID id = UUID.randomUUID();
-        doThrow(new ApiTokenNotFoundException(id)).when(apiTokenUseCase).revokeToken(id);
+        doThrow(ApiTokenNotFoundException.notFound(id)).when(apiTokenUseCase).revokeToken(id);
 
         mockMvc.perform(delete("/workspaces/{workspaceId}/tokens/{id}", workspaceId, id))
                 .andExpect(status().isNotFound())
@@ -110,7 +110,7 @@ class ApiTokenControllerTest {
     @WithMockUser
     void shouldReturn409WhenTokenAlreadyRevoked() throws Exception {
         UUID id = UUID.randomUUID();
-        doThrow(new ApiTokenAlreadyRevokedException(id)).when(apiTokenUseCase).revokeToken(id);
+        doThrow(ApiTokenAlreadyRevokedException.alreadyRevoked(id)).when(apiTokenUseCase).revokeToken(id);
 
         mockMvc.perform(delete("/workspaces/{workspaceId}/tokens/{id}", workspaceId, id))
                 .andExpect(status().isConflict())

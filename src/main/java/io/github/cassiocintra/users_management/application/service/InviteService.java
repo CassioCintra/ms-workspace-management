@@ -50,11 +50,11 @@ public class InviteService implements InviteUseCase {
                 command.workspaceId(), command.email(), command.role(), TenantContext.getUserId());
 
         Workspace workspace = workspaceRepository.findById(command.workspaceId())
-                .orElseThrow(() -> new WorkspaceNotFoundException(command.workspaceId()));
+                .orElseThrow(() -> WorkspaceNotFoundException.notFound(command.workspaceId()));
 
         if (inviteRepository.existsByEmailAndStatus(command.email(), InviteStatus.PENDING)) {
             log.warn("Duplicate invite attempt [workspaceId={}, email={}]", command.workspaceId(), command.email());
-            throw new InviteAlreadyPendingException(command.email());
+            throw InviteAlreadyPendingException.alreadyPending(command.email());
         }
 
         Invite invite = Invite.builder()
@@ -87,15 +87,15 @@ public class InviteService implements InviteUseCase {
         log.info("Fetching invite info [token={}]", token);
 
         UUID workspaceId = inviteTokenRepository.findWorkspaceIdByToken(token)
-                .orElseThrow(() -> new InviteTokenNotFoundException(token));
+                .orElseThrow(() -> InviteTokenNotFoundException.notFound(token));
 
         TenantContext.setWorkspaceId(workspaceId.toString());
 
         Invite invite = inviteRepository.findByToken(token)
-                .orElseThrow(() -> new InviteTokenNotFoundException(token));
+                .orElseThrow(() -> InviteTokenNotFoundException.notFound(token));
 
         Workspace workspace = workspaceRepository.findById(workspaceId)
-                .orElseThrow(() -> new WorkspaceNotFoundException(workspaceId));
+                .orElseThrow(() -> WorkspaceNotFoundException.notFound(workspaceId));
 
         log.info("Invite info retrieved [email={}, workspace={}, role={}, status={}]",
                 invite.getEmail(), workspace.getName(), invite.getRole(), invite.getStatus());

@@ -65,7 +65,7 @@ public class WorkspaceService implements WorkspaceUseCase {
     public void changeMemberRole(ChangeMemberRoleCommand command) {
         requireWorkspaceExists(command.workspaceId());
         WorkspaceMember member = workspaceMemberRepository.findByUserId(command.userId())
-                .orElseThrow(() -> new MemberNotFoundException(command.userId()));
+                .orElseThrow(() -> MemberNotFoundException.notFound(command.userId()));
         workspaceMemberRepository.save(member.withRole(command.role()));
     }
 
@@ -77,6 +77,6 @@ public class WorkspaceService implements WorkspaceUseCase {
 
     private void requireWorkspaceExists(UUID workspaceId) {
         workspaceRepository.findById(workspaceId)
-                .orElseThrow(() -> new WorkspaceNotFoundException(workspaceId));
+                .orElseThrow(() -> WorkspaceNotFoundException.notFound(workspaceId));
     }
 }

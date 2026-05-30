@@ -98,7 +98,7 @@ class WorkspaceControllerTest {
     @WithMockUser
     void shouldReturn404WhenWorkspaceNotFound() throws Exception {
         UUID id = UUID.randomUUID();
-        when(workspaceUseCase.listMembers(id)).thenThrow(new WorkspaceNotFoundException(id));
+        when(workspaceUseCase.listMembers(id)).thenThrow(WorkspaceNotFoundException.notFound(id));
 
         mockMvc.perform(get("/workspaces/{id}/members", id))
                 .andExpect(status().isNotFound())
@@ -125,7 +125,7 @@ class WorkspaceControllerTest {
     @WithMockUser
     void shouldReturn404WhenMemberNotFoundOnRoleChange() throws Exception {
         UUID id = UUID.randomUUID();
-        doThrow(new MemberNotFoundException("ghost")).when(workspaceUseCase).changeMemberRole(any());
+        doThrow(MemberNotFoundException.notFound("ghost")).when(workspaceUseCase).changeMemberRole(any());
 
         mockMvc.perform(patch("/workspaces/{id}/members/{userId}/role", id, "ghost")
                         .contentType(MediaType.APPLICATION_JSON)

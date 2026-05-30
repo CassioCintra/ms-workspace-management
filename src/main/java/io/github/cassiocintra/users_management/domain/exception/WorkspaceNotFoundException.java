@@ -4,7 +4,11 @@ import java.util.UUID;
 
 public class WorkspaceNotFoundException extends RuntimeException {
 
-    public WorkspaceNotFoundException(UUID id) {
-        super("Workspace not found: " + id);
+    private WorkspaceNotFoundException(String message) {
+        super(message);
+    }
+
+    public static WorkspaceNotFoundException notFound(UUID id) {
+        return new WorkspaceNotFoundException("Workspace not found: " + id);
     }
 }

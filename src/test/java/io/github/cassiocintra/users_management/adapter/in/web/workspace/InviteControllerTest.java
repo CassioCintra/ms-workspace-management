@@ -76,7 +76,7 @@ class InviteControllerTest {
     @WithMockUser
     void shouldReturn404WhenWorkspaceNotFound() throws Exception {
         UUID id = UUID.randomUUID();
-        when(inviteUseCase.createInvite(any())).thenThrow(new WorkspaceNotFoundException(id));
+        when(inviteUseCase.createInvite(any())).thenThrow(WorkspaceNotFoundException.notFound(id));
 
         mockMvc.perform(post("/workspaces/{id}/invites", id)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -90,7 +90,7 @@ class InviteControllerTest {
     @WithMockUser
     void shouldReturn409WhenPendingInviteExists() throws Exception {
         when(inviteUseCase.createInvite(any()))
-                .thenThrow(new InviteAlreadyPendingException("bob@example.com"));
+                .thenThrow(InviteAlreadyPendingException.alreadyPending("bob@example.com"));
 
         mockMvc.perform(post("/workspaces/{id}/invites", UUID.randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)

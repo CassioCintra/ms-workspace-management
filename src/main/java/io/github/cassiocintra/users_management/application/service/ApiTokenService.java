@@ -57,10 +57,10 @@ public class ApiTokenService implements ApiTokenUseCase {
     @Override
     public void revokeToken(UUID id) {
         ApiToken token = apiTokenRepository.findById(id)
-                .orElseThrow(() -> new ApiTokenNotFoundException(id));
+                .orElseThrow(() -> ApiTokenNotFoundException.notFound(id));
 
         if (token.isRevoked()) {
-            throw new ApiTokenAlreadyRevokedException(id);
+            throw ApiTokenAlreadyRevokedException.alreadyRevoked(id);
         }
 
         ApiToken revoked = apiTokenRepository.save(token.revoke());

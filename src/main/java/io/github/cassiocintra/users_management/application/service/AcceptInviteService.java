@@ -43,29 +43,29 @@ public class AcceptInviteService implements AcceptInviteUseCase {
         UUID workspaceId = inviteTokenRepository.findWorkspaceIdByToken(command.token())
                 .orElseThrow(() -> {
                     log.warn("Invite token not found or already used [token={}]", command.token());
-                    return new InviteTokenNotFoundException(command.token());
+                    return InviteTokenNotFoundException.notFound(command.token());
                 });
 
         TenantContext.setWorkspaceId(workspaceId.toString());
         log.debug("Workspace resolved from token [workspaceId={}]", workspaceId);
 
         Invite invite = inviteRepository.findByToken(command.token())
-                .orElseThrow(() -> new InviteTokenNotFoundException(command.token()));
+                .orElseThrow(() -> InviteTokenNotFoundException.notFound(command.token()));
 
         if (invite.getStatus() != InviteStatus.PENDING) {
             log.warn("Invite already used or expired [token={}, status={}]", command.token(), invite.getStatus());
-            throw new InviteTokenNotFoundException(command.token());
+            throw InviteTokenNotFoundException.notFound(command.token());
         }
 
         if (invite.getExpiresAt().isBefore(Instant.now())) {
             log.warn("Invite expired [token={}, expiredAt={}]", command.token(), invite.getExpiresAt());
-            throw new InviteExpiredException(command.token());
+            throw InviteExpiredException.expired(command.token());
         }
 
         String jwtEmail = TenantContext.getUserEmail();
         if (jwtEmail != null && !jwtEmail.equalsIgnoreCase(invite.getEmail())) {
             log.warn("Email mismatch on invite accept [jwtEmail={}, inviteEmail={}]", jwtEmail, invite.getEmail());
-            throw new InviteEmailMismatchException();
+            throw InviteEmailMismatchException.mismatch();
         }
 
         workspaceMemberRepository.save(WorkspaceMember.builder()

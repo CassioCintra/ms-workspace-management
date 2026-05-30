@@ -2,7 +2,11 @@ package io.github.cassiocintra.users_management.domain.exception;
 
 public class InviteEmailMismatchException extends RuntimeException {
 
-    public InviteEmailMismatchException() {
-        super("Authenticated user email does not match the invited email");
+    private InviteEmailMismatchException(String message) {
+        super(message);
+    }
+
+    public static InviteEmailMismatchException mismatch() {
+        return new InviteEmailMismatchException("Authenticated user email does not match the invited email");
     }
 }
