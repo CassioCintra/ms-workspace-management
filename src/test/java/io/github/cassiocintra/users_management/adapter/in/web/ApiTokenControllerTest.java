@@ -40,6 +40,8 @@ class ApiTokenControllerTest {
     @MockitoBean
     ApiTokenUseCase apiTokenUseCase;
 
+    private final UUID workspaceId = UUID.randomUUID();
+
     private final ObjectMapper objectMapper = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
@@ -57,7 +59,7 @@ class ApiTokenControllerTest {
         ApiToken token = token(id, "ci-token");
         when(apiTokenUseCase.createToken(any())).thenReturn(new CreatedTokenResult(token, "plain-secret-abc"));
 
-        mockMvc.perform(post("/tokens")
+        mockMvc.perform(post("/workspaces/{workspaceId}/tokens", workspaceId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new CreateApiTokenRequest("ci-token"))))
                 .andExpect(status().isCreated())
@@ -73,7 +75,7 @@ class ApiTokenControllerTest {
                 token(UUID.randomUUID(), "ci-token"),
                 token(UUID.randomUUID(), "deploy-token")));
 
-        mockMvc.perform(get("/tokens"))
+        mockMvc.perform(get("/workspaces/{workspaceId}/tokens", workspaceId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].name").value("ci-token"))
@@ -86,7 +88,7 @@ class ApiTokenControllerTest {
         UUID id = UUID.randomUUID();
         doNothing().when(apiTokenUseCase).revokeToken(id);
 
-        mockMvc.perform(delete("/tokens/{id}", id))
+        mockMvc.perform(delete("/workspaces/{workspaceId}/tokens/{id}", workspaceId, id))
                 .andExpect(status().isNoContent());
 
         verify(apiTokenUseCase).revokeToken(id);
@@ -98,7 +100,7 @@ class ApiTokenControllerTest {
         UUID id = UUID.randomUUID();
         doThrow(new ApiTokenNotFoundException(id)).when(apiTokenUseCase).revokeToken(id);
 
-        mockMvc.perform(delete("/tokens/{id}", id))
+        mockMvc.perform(delete("/workspaces/{workspaceId}/tokens/{id}", workspaceId, id))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404));
     }
@@ -109,7 +111,7 @@ class ApiTokenControllerTest {
         UUID id = UUID.randomUUID();
         doThrow(new ApiTokenAlreadyRevokedException(id)).when(apiTokenUseCase).revokeToken(id);
 
-        mockMvc.perform(delete("/tokens/{id}", id))
+        mockMvc.perform(delete("/workspaces/{workspaceId}/tokens/{id}", workspaceId, id))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409));
     }

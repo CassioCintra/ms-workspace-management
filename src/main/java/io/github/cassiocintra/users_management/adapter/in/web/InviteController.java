@@ -2,6 +2,7 @@ package io.github.cassiocintra.users_management.adapter.in.web;
 
 import io.github.cassiocintra.users_management.adapter.in.web.request.CreateInviteRequest;
 import io.github.cassiocintra.users_management.adapter.in.web.response.InviteResponse;
+import io.github.cassiocintra.users_management.application.TenantContext;
 import io.github.cassiocintra.users_management.application.port.in.InviteUseCase;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -28,6 +29,7 @@ public class InviteController {
     @ResponseStatus(HttpStatus.CREATED)
     public InviteResponse createInvite(@PathVariable UUID id,
                                        @Valid @RequestBody CreateInviteRequest request) {
+        TenantContext.setWorkspaceId(id.toString());
         return InviteResponse.from(inviteUseCase.createInvite(
                 new InviteUseCase.CreateInviteCommand(id, request.email(), request.role())));
     }

@@ -2,6 +2,7 @@ package io.github.cassiocintra.users_management.adapter.in.web;
 
 import io.github.cassiocintra.users_management.adapter.in.web.request.CreateApiTokenRequest;
 import io.github.cassiocintra.users_management.adapter.in.web.response.ApiTokenResponse;
+import io.github.cassiocintra.users_management.application.TenantContext;
 import io.github.cassiocintra.users_management.application.port.in.ApiTokenUseCase;
 import io.github.cassiocintra.users_management.application.port.in.ApiTokenUseCase.CreatedTokenResult;
 import jakarta.validation.Valid;
@@ -19,7 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/tokens")
+@RequestMapping("/workspaces/{workspaceId}/tokens")
 public class ApiTokenController {
 
     private final ApiTokenUseCase apiTokenUseCase;
@@ -30,14 +31,17 @@ public class ApiTokenController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiTokenResponse createToken(@Valid @RequestBody CreateApiTokenRequest request) {
+    public ApiTokenResponse createToken(@PathVariable UUID workspaceId,
+                                        @Valid @RequestBody CreateApiTokenRequest request) {
+        TenantContext.setWorkspaceId(workspaceId.toString());
         CreatedTokenResult result = apiTokenUseCase.createToken(
                 new ApiTokenUseCase.CreateTokenCommand(request.name()));
         return ApiTokenResponse.fromCreated(result.token(), result.plainToken());
     }
 
     @GetMapping
-    public List<ApiTokenResponse> listTokens() {
+    public List<ApiTokenResponse> listTokens(@PathVariable UUID workspaceId) {
+        TenantContext.setWorkspaceId(workspaceId.toString());
         return apiTokenUseCase.listTokens().stream()
                 .map(ApiTokenResponse::from)
                 .toList();
@@ -45,7 +49,8 @@ public class ApiTokenController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void revokeToken(@PathVariable UUID id) {
+    public void revokeToken(@PathVariable UUID workspaceId, @PathVariable UUID id) {
+        TenantContext.setWorkspaceId(workspaceId.toString());
         apiTokenUseCase.revokeToken(id);
     }
 }

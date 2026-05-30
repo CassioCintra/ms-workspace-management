@@ -44,6 +44,7 @@ public class WorkspaceController {
 
     @GetMapping("/{id}/members")
     public List<WorkspaceMemberResponse> listMembers(@PathVariable UUID id) {
+        TenantContext.setWorkspaceId(id.toString());
         return workspaceUseCase.listMembers(id).stream()
                 .map(WorkspaceMemberResponse::from)
                 .toList();
@@ -54,6 +55,7 @@ public class WorkspaceController {
     public void changeMemberRole(@PathVariable UUID id,
                                  @PathVariable String userId,
                                  @Valid @RequestBody ChangeRoleRequest request) {
+        TenantContext.setWorkspaceId(id.toString());
         workspaceUseCase.changeMemberRole(
                 new WorkspaceUseCase.ChangeMemberRoleCommand(id, userId, request.role()));
     }
@@ -61,6 +63,7 @@ public class WorkspaceController {
     @DeleteMapping("/{id}/members/{userId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void removeMember(@PathVariable UUID id, @PathVariable String userId) {
+        TenantContext.setWorkspaceId(id.toString());
         workspaceUseCase.removeMember(new WorkspaceUseCase.RemoveMemberCommand(id, userId));
     }
 }
