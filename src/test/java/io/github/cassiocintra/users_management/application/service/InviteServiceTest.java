@@ -75,7 +75,7 @@ class InviteServiceTest {
         assertThat(result.getToken()).isNotBlank();
         assertThat(result.getExpiresAt()).isAfter(Instant.now());
 
-        verify(emailPort).sendInvite(any(Invite.class), eq("Acme"));
+        verify(emailPort).sendInvite(any(Invite.class), eq("Acme"), any());
         verify(inviteEventPublisher).publish(any(Invite.class), eq(workspaceId), eq("user-1"));
     }
 

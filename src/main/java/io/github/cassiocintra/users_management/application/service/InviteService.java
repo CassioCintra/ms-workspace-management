@@ -13,6 +13,7 @@ import io.github.cassiocintra.users_management.domain.Workspace;
 import io.github.cassiocintra.users_management.domain.exception.InviteAlreadyPendingException;
 import io.github.cassiocintra.users_management.domain.exception.InviteTokenNotFoundException;
 import io.github.cassiocintra.users_management.domain.exception.WorkspaceNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @Transactional
 public class InviteService implements InviteUseCase {
@@ -44,10 +46,14 @@ public class InviteService implements InviteUseCase {
 
     @Override
     public Invite createInvite(CreateInviteCommand command) {
+        log.info("Creating invite [workspaceId={}, email={}, role={}, invitedBy={}]",
+                command.workspaceId(), command.email(), command.role(), TenantContext.getUserId());
+
         Workspace workspace = workspaceRepository.findById(command.workspaceId())
                 .orElseThrow(() -> new WorkspaceNotFoundException(command.workspaceId()));
 
         if (inviteRepository.existsByEmailAndStatus(command.email(), InviteStatus.PENDING)) {
+            log.warn("Duplicate invite attempt [workspaceId={}, email={}]", command.workspaceId(), command.email());
             throw new InviteAlreadyPendingException(command.email());
         }
 
@@ -63,9 +69,14 @@ public class InviteService implements InviteUseCase {
 
         Invite saved = inviteRepository.save(invite);
         inviteTokenRepository.save(command.workspaceId(), saved.getToken());
+        log.debug("Invite persisted [inviteId={}, token={}]", saved.getId(), saved.getToken());
 
-        emailPort.sendInvite(saved, workspace.getName());
+        emailPort.sendInvite(saved, workspace.getName(), TenantContext.getUserName());
+        log.info("Invite email sent [inviteId={}, to={}, workspace={}]",
+                saved.getId(), saved.getEmail(), workspace.getName());
+
         inviteEventPublisher.publish(saved, command.workspaceId(), TenantContext.getUserId());
+        log.debug("Invite event published [inviteId={}, workspaceId={}]", saved.getId(), command.workspaceId());
 
         return saved;
     }
@@ -73,6 +84,8 @@ public class InviteService implements InviteUseCase {
     @Override
     @Transactional(readOnly = true)
     public InviteInfo getInviteInfo(String token) {
+        log.info("Fetching invite info [token={}]", token);
+
         UUID workspaceId = inviteTokenRepository.findWorkspaceIdByToken(token)
                 .orElseThrow(() -> new InviteTokenNotFoundException(token));
 
@@ -83,6 +96,9 @@ public class InviteService implements InviteUseCase {
 
         Workspace workspace = workspaceRepository.findById(workspaceId)
                 .orElseThrow(() -> new WorkspaceNotFoundException(workspaceId));
+
+        log.info("Invite info retrieved [email={}, workspace={}, role={}, status={}]",
+                invite.getEmail(), workspace.getName(), invite.getRole(), invite.getStatus());
 
         return new InviteInfo(invite.getEmail(), workspace.getName(), invite.getRole(),
                 invite.getExpiresAt(), invite.getStatus());
