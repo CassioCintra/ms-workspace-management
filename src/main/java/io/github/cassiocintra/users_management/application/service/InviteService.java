@@ -5,11 +5,13 @@ import io.github.cassiocintra.users_management.application.port.in.InviteUseCase
 import io.github.cassiocintra.users_management.application.port.out.EmailPort;
 import io.github.cassiocintra.users_management.application.port.out.InviteEventPublisher;
 import io.github.cassiocintra.users_management.application.port.out.InviteRepository;
+import io.github.cassiocintra.users_management.application.port.out.InviteTokenRepository;
 import io.github.cassiocintra.users_management.application.port.out.WorkspaceRepository;
 import io.github.cassiocintra.users_management.domain.Invite;
 import io.github.cassiocintra.users_management.domain.InviteStatus;
 import io.github.cassiocintra.users_management.domain.Workspace;
 import io.github.cassiocintra.users_management.domain.exception.InviteAlreadyPendingException;
+import io.github.cassiocintra.users_management.domain.exception.InviteTokenNotFoundException;
 import io.github.cassiocintra.users_management.domain.exception.WorkspaceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,15 +25,18 @@ import java.util.UUID;
 public class InviteService implements InviteUseCase {
 
     private final InviteRepository inviteRepository;
+    private final InviteTokenRepository inviteTokenRepository;
     private final WorkspaceRepository workspaceRepository;
     private final InviteEventPublisher inviteEventPublisher;
     private final EmailPort emailPort;
 
     public InviteService(InviteRepository inviteRepository,
+                         InviteTokenRepository inviteTokenRepository,
                          WorkspaceRepository workspaceRepository,
                          InviteEventPublisher inviteEventPublisher,
                          EmailPort emailPort) {
         this.inviteRepository = inviteRepository;
+        this.inviteTokenRepository = inviteTokenRepository;
         this.workspaceRepository = workspaceRepository;
         this.inviteEventPublisher = inviteEventPublisher;
         this.emailPort = emailPort;
@@ -57,10 +62,29 @@ public class InviteService implements InviteUseCase {
                 .build();
 
         Invite saved = inviteRepository.save(invite);
+        inviteTokenRepository.save(command.workspaceId(), saved.getToken());
 
         emailPort.sendInvite(saved, workspace.getName());
         inviteEventPublisher.publish(saved, command.workspaceId(), TenantContext.getUserId());
 
         return saved;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public InviteInfo getInviteInfo(String token) {
+        UUID workspaceId = inviteTokenRepository.findWorkspaceIdByToken(token)
+                .orElseThrow(() -> new InviteTokenNotFoundException(token));
+
+        TenantContext.setWorkspaceId(workspaceId.toString());
+
+        Invite invite = inviteRepository.findByToken(token)
+                .orElseThrow(() -> new InviteTokenNotFoundException(token));
+
+        Workspace workspace = workspaceRepository.findById(workspaceId)
+                .orElseThrow(() -> new WorkspaceNotFoundException(workspaceId));
+
+        return new InviteInfo(invite.getEmail(), workspace.getName(), invite.getRole(),
+                invite.getExpiresAt(), invite.getStatus());
     }
 }

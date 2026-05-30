@@ -5,6 +5,7 @@ import io.github.cassiocintra.users_management.application.port.in.InviteUseCase
 import io.github.cassiocintra.users_management.application.port.out.EmailPort;
 import io.github.cassiocintra.users_management.application.port.out.InviteEventPublisher;
 import io.github.cassiocintra.users_management.application.port.out.InviteRepository;
+import io.github.cassiocintra.users_management.application.port.out.InviteTokenRepository;
 import io.github.cassiocintra.users_management.application.port.out.WorkspaceRepository;
 import io.github.cassiocintra.users_management.domain.Invite;
 import io.github.cassiocintra.users_management.domain.InviteStatus;
@@ -34,6 +35,7 @@ import static org.mockito.Mockito.*;
 class InviteServiceTest {
 
     @Mock private InviteRepository inviteRepository;
+    @Mock private InviteTokenRepository inviteTokenRepository;
     @Mock private WorkspaceRepository workspaceRepository;
     @Mock private InviteEventPublisher inviteEventPublisher;
     @Mock private EmailPort emailPort;

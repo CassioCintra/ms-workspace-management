@@ -17,4 +17,11 @@ public class Invite {
     private Instant expiresAt;
     private InviteStatus status;
     private Instant createdAt;
+
+    public Invite accept() {
+        return Invite.builder()
+                .id(id).email(email).role(role).token(token)
+                .expiresAt(expiresAt).status(InviteStatus.ACCEPTED)
+                .createdAt(createdAt).build();
+    }
 }

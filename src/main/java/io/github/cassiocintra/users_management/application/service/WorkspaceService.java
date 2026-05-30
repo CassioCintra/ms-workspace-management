@@ -1,7 +1,7 @@
 package io.github.cassiocintra.users_management.application.service;
 
+import io.github.cassiocintra.users_management.application.TenantContext;
 import io.github.cassiocintra.users_management.application.port.in.WorkspaceUseCase;
-import io.github.cassiocintra.users_management.application.port.out.TenantSchemaPort;
 import io.github.cassiocintra.users_management.application.port.out.WorkspaceMemberRepository;
 import io.github.cassiocintra.users_management.application.port.out.WorkspaceRepository;
 import io.github.cassiocintra.users_management.domain.Workspace;
@@ -22,14 +22,11 @@ public class WorkspaceService implements WorkspaceUseCase {
 
     private final WorkspaceRepository workspaceRepository;
     private final WorkspaceMemberRepository workspaceMemberRepository;
-    private final TenantSchemaPort tenantSchemaPort;
 
     public WorkspaceService(WorkspaceRepository workspaceRepository,
-                            WorkspaceMemberRepository workspaceMemberRepository,
-                            TenantSchemaPort tenantSchemaPort) {
+                            WorkspaceMemberRepository workspaceMemberRepository) {
         this.workspaceRepository = workspaceRepository;
         this.workspaceMemberRepository = workspaceMemberRepository;
-        this.tenantSchemaPort = tenantSchemaPort;
     }
 
     @Override
@@ -44,10 +41,12 @@ public class WorkspaceService implements WorkspaceUseCase {
 
         Workspace saved = workspaceRepository.save(workspace);
 
-        tenantSchemaPort.provisionWorkspace(saved.getId());
+        TenantContext.setWorkspaceId(saved.getId().toString());
 
         workspaceMemberRepository.save(WorkspaceMember.builder()
                 .userId(command.ownerId())
+                .email(command.ownerEmail())
+                .name(command.ownerName())
                 .role(WorkspaceRole.ADMIN)
                 .joinedAt(Instant.now())
                 .build());

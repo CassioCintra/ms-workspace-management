@@ -26,12 +26,15 @@ public class TenantExtractorFilter extends OncePerRequestFilter {
                 String workspaceId = jwtAuth.getToken().getClaimAsString("workspace_id");
                 String userId = jwtAuth.getToken().getSubject();
                 if (workspaceId != null) {
-                    TenantContext.setTenantId("ws_" + workspaceId.replace("-", "_"));
                     TenantContext.setWorkspaceId(workspaceId);
                 }
                 if (userId != null) {
                     TenantContext.setUserId(userId);
                 }
+                String email = jwtAuth.getToken().getClaimAsString("email");
+                String name = jwtAuth.getToken().getClaimAsString("name");
+                if (email != null) TenantContext.setUserEmail(email);
+                if (name != null) TenantContext.setUserName(name);
             }
             filterChain.doFilter(request, response);
         } finally {

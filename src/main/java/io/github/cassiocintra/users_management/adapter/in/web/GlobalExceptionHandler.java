@@ -2,6 +2,9 @@ package io.github.cassiocintra.users_management.adapter.in.web;
 
 import io.github.cassiocintra.users_management.adapter.in.web.response.ErrorResponse;
 import io.github.cassiocintra.users_management.domain.exception.ApiTokenAlreadyRevokedException;
+import io.github.cassiocintra.users_management.domain.exception.InviteEmailMismatchException;
+import io.github.cassiocintra.users_management.domain.exception.InviteExpiredException;
+import io.github.cassiocintra.users_management.domain.exception.InviteTokenNotFoundException;
 import io.github.cassiocintra.users_management.domain.exception.ApiTokenNotFoundException;
 import io.github.cassiocintra.users_management.domain.exception.InviteAlreadyPendingException;
 import io.github.cassiocintra.users_management.domain.exception.MemberNotFoundException;
@@ -31,6 +34,30 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
                 .body(ErrorResponse.of(HttpStatus.CONFLICT, ex.getMessage(), request.getRequestURI()));
+    }
+
+    @ExceptionHandler(InviteTokenNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleInviteTokenNotFound(InviteTokenNotFoundException ex, HttpServletRequest request) {
+        log.warn("Invite token not found [uri={}, message={}]", request.getRequestURI(), ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI()));
+    }
+
+    @ExceptionHandler(InviteExpiredException.class)
+    public ResponseEntity<ErrorResponse> handleInviteExpired(InviteExpiredException ex, HttpServletRequest request) {
+        log.warn("Invite expired [uri={}, message={}]", request.getRequestURI(), ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.GONE)
+                .body(ErrorResponse.of(HttpStatus.GONE, ex.getMessage(), request.getRequestURI()));
+    }
+
+    @ExceptionHandler(InviteEmailMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleInviteEmailMismatch(InviteEmailMismatchException ex, HttpServletRequest request) {
+        log.warn("Invite email mismatch [uri={}]", request.getRequestURI());
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(ErrorResponse.of(HttpStatus.FORBIDDEN, ex.getMessage(), request.getRequestURI()));
     }
 
     @ExceptionHandler(InviteAlreadyPendingException.class)

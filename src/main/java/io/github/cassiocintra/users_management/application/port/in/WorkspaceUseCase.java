@@ -9,7 +9,7 @@ import java.util.UUID;
 
 public interface WorkspaceUseCase {
 
-    record CreateWorkspaceCommand(String name, String slug, String ownerId) {}
+    record CreateWorkspaceCommand(String name, String slug, String ownerId, String ownerEmail, String ownerName) {}
 
     record ChangeMemberRoleCommand(UUID workspaceId, String userId, WorkspaceRole role) {}
 

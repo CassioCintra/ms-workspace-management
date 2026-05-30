@@ -3,7 +3,6 @@ package io.github.cassiocintra.users_management.application.service;
 import io.github.cassiocintra.users_management.application.port.in.WorkspaceUseCase.ChangeMemberRoleCommand;
 import io.github.cassiocintra.users_management.application.port.in.WorkspaceUseCase.CreateWorkspaceCommand;
 import io.github.cassiocintra.users_management.application.port.in.WorkspaceUseCase.RemoveMemberCommand;
-import io.github.cassiocintra.users_management.application.port.out.TenantSchemaPort;
 import io.github.cassiocintra.users_management.application.port.out.WorkspaceMemberRepository;
 import io.github.cassiocintra.users_management.application.port.out.WorkspaceRepository;
 import io.github.cassiocintra.users_management.domain.Workspace;
@@ -37,9 +36,6 @@ class WorkspaceServiceTest {
     @Mock
     private WorkspaceMemberRepository workspaceMemberRepository;
 
-    @Mock
-    private TenantSchemaPort tenantSchemaPort;
-
     @InjectMocks
     private WorkspaceService service;
 
@@ -61,10 +57,9 @@ class WorkspaceServiceTest {
         UUID id = UUID.randomUUID();
         when(workspaceRepository.save(any())).thenReturn(workspace(id));
 
-        Workspace result = service.createWorkspace(new CreateWorkspaceCommand("Acme", "acme", "user-1"));
+        Workspace result = service.createWorkspace(new CreateWorkspaceCommand("Acme", "acme", "user-1", "user1@acme.com", "User One"));
 
         assertThat(result.getName()).isEqualTo("Acme");
-        verify(tenantSchemaPort).provisionWorkspace(id);
     }
 
     @Test
@@ -72,7 +67,7 @@ class WorkspaceServiceTest {
         UUID id = UUID.randomUUID();
         when(workspaceRepository.save(any())).thenReturn(workspace(id));
 
-        service.createWorkspace(new CreateWorkspaceCommand("Acme", "acme", "user-1"));
+        service.createWorkspace(new CreateWorkspaceCommand("Acme", "acme", "user-1", "user1@acme.com", "User One"));
 
         ArgumentCaptor<WorkspaceMember> captor = ArgumentCaptor.forClass(WorkspaceMember.class);
         verify(workspaceMemberRepository).save(captor.capture());

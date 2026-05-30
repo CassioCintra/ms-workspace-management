@@ -34,9 +34,12 @@ public class WorkspaceController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public WorkspaceResponse createWorkspace(@Valid @RequestBody CreateWorkspaceRequest request) {
-        String ownerId = TenantContext.getUserId();
         return WorkspaceResponse.from(workspaceUseCase.createWorkspace(
-                new WorkspaceUseCase.CreateWorkspaceCommand(request.name(), request.slug(), ownerId)));
+                new WorkspaceUseCase.CreateWorkspaceCommand(
+                        request.name(), request.slug(),
+                        TenantContext.getUserId(),
+                        TenantContext.getUserEmail(),
+                        TenantContext.getUserName())));
     }
 
     @GetMapping("/{id}/members")
