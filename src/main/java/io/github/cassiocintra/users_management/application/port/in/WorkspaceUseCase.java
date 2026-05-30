@@ -1,8 +1,8 @@
 package io.github.cassiocintra.users_management.application.port.in;
 
-import io.github.cassiocintra.users_management.domain.Workspace;
-import io.github.cassiocintra.users_management.domain.WorkspaceMember;
-import io.github.cassiocintra.users_management.domain.WorkspaceRole;
+import io.github.cassiocintra.users_management.domain.workspace.Workspace;
+import io.github.cassiocintra.users_management.domain.workspace.WorkspaceMember;
+import io.github.cassiocintra.users_management.domain.workspace.WorkspaceRole;
 
 import java.util.List;
 import java.util.UUID;

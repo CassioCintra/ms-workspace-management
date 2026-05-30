@@ -1,8 +1,8 @@
 package io.github.cassiocintra.users_management.adapter.in.web.response;
 
-import io.github.cassiocintra.users_management.domain.Invite;
-import io.github.cassiocintra.users_management.domain.InviteStatus;
-import io.github.cassiocintra.users_management.domain.WorkspaceRole;
+import io.github.cassiocintra.users_management.domain.invite.Invite;
+import io.github.cassiocintra.users_management.domain.invite.InviteStatus;
+import io.github.cassiocintra.users_management.domain.workspace.WorkspaceRole;
 
 import java.time.Instant;
 import java.util.UUID;

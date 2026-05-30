@@ -1,7 +1,7 @@
 package io.github.cassiocintra.users_management.adapter.out.messaging;
 
 import io.github.cassiocintra.users_management.application.port.out.InviteEventPublisher;
-import io.github.cassiocintra.users_management.domain.Invite;
+import io.github.cassiocintra.users_management.domain.invite.Invite;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;

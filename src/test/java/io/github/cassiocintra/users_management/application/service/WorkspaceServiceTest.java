@@ -5,9 +5,9 @@ import io.github.cassiocintra.users_management.application.port.in.WorkspaceUseC
 import io.github.cassiocintra.users_management.application.port.in.WorkspaceUseCase.RemoveMemberCommand;
 import io.github.cassiocintra.users_management.application.port.out.WorkspaceMemberRepository;
 import io.github.cassiocintra.users_management.application.port.out.WorkspaceRepository;
-import io.github.cassiocintra.users_management.domain.Workspace;
-import io.github.cassiocintra.users_management.domain.WorkspaceMember;
-import io.github.cassiocintra.users_management.domain.WorkspaceRole;
+import io.github.cassiocintra.users_management.domain.workspace.Workspace;
+import io.github.cassiocintra.users_management.domain.workspace.WorkspaceMember;
+import io.github.cassiocintra.users_management.domain.workspace.WorkspaceRole;
 import io.github.cassiocintra.users_management.domain.exception.MemberNotFoundException;
 import io.github.cassiocintra.users_management.domain.exception.WorkspaceNotFoundException;
 import org.junit.jupiter.api.Test;

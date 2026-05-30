@@ -1,6 +1,6 @@
 package io.github.cassiocintra.users_management.adapter.out.messaging;
 
-import io.github.cassiocintra.users_management.domain.Invite;
+import io.github.cassiocintra.users_management.domain.invite.Invite;
 
 import java.time.Instant;
 import java.util.UUID;

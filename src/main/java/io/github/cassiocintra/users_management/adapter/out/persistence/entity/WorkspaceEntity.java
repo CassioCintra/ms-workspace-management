@@ -1,6 +1,6 @@
 package io.github.cassiocintra.users_management.adapter.out.persistence.entity;
 
-import io.github.cassiocintra.users_management.domain.Workspace;
+import io.github.cassiocintra.users_management.domain.workspace.Workspace;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;

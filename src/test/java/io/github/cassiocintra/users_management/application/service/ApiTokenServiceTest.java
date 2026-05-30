@@ -5,7 +5,7 @@ import io.github.cassiocintra.users_management.application.port.in.ApiTokenUseCa
 import io.github.cassiocintra.users_management.application.port.in.ApiTokenUseCase.CreatedTokenResult;
 import io.github.cassiocintra.users_management.application.port.out.ApiTokenRepository;
 import io.github.cassiocintra.users_management.application.port.out.TokenEventPublisher;
-import io.github.cassiocintra.users_management.domain.ApiToken;
+import io.github.cassiocintra.users_management.domain.token.ApiToken;
 import io.github.cassiocintra.users_management.domain.exception.ApiTokenAlreadyRevokedException;
 import io.github.cassiocintra.users_management.domain.exception.ApiTokenNotFoundException;
 import org.junit.jupiter.api.AfterEach;

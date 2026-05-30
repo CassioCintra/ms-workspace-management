@@ -1,8 +1,8 @@
 package io.github.cassiocintra.users_management.adapter.out.mail;
 
 import io.github.cassiocintra.users_management.application.port.out.EmailPort;
-import io.github.cassiocintra.users_management.domain.Invite;
-import io.github.cassiocintra.users_management.domain.WorkspaceRole;
+import io.github.cassiocintra.users_management.domain.invite.Invite;
+import io.github.cassiocintra.users_management.domain.workspace.WorkspaceRole;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;

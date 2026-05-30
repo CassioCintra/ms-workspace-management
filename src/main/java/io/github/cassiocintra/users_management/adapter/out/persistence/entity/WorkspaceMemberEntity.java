@@ -1,7 +1,7 @@
 package io.github.cassiocintra.users_management.adapter.out.persistence.entity;
 
-import io.github.cassiocintra.users_management.domain.WorkspaceMember;
-import io.github.cassiocintra.users_management.domain.WorkspaceRole;
+import io.github.cassiocintra.users_management.domain.workspace.WorkspaceMember;
+import io.github.cassiocintra.users_management.domain.workspace.WorkspaceRole;
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;

@@ -5,9 +5,9 @@ import io.github.cassiocintra.users_management.application.port.in.AcceptInviteU
 import io.github.cassiocintra.users_management.application.port.out.InviteRepository;
 import io.github.cassiocintra.users_management.application.port.out.InviteTokenRepository;
 import io.github.cassiocintra.users_management.application.port.out.WorkspaceMemberRepository;
-import io.github.cassiocintra.users_management.domain.Invite;
-import io.github.cassiocintra.users_management.domain.InviteStatus;
-import io.github.cassiocintra.users_management.domain.WorkspaceMember;
+import io.github.cassiocintra.users_management.domain.invite.Invite;
+import io.github.cassiocintra.users_management.domain.invite.InviteStatus;
+import io.github.cassiocintra.users_management.domain.workspace.WorkspaceMember;
 import io.github.cassiocintra.users_management.domain.exception.InviteEmailMismatchException;
 import io.github.cassiocintra.users_management.domain.exception.InviteExpiredException;
 import io.github.cassiocintra.users_management.domain.exception.InviteTokenNotFoundException;

@@ -7,9 +7,9 @@ import io.github.cassiocintra.users_management.application.port.out.InviteEventP
 import io.github.cassiocintra.users_management.application.port.out.InviteRepository;
 import io.github.cassiocintra.users_management.application.port.out.InviteTokenRepository;
 import io.github.cassiocintra.users_management.application.port.out.WorkspaceRepository;
-import io.github.cassiocintra.users_management.domain.Invite;
-import io.github.cassiocintra.users_management.domain.InviteStatus;
-import io.github.cassiocintra.users_management.domain.Workspace;
+import io.github.cassiocintra.users_management.domain.invite.Invite;
+import io.github.cassiocintra.users_management.domain.invite.InviteStatus;
+import io.github.cassiocintra.users_management.domain.workspace.Workspace;
 import io.github.cassiocintra.users_management.domain.exception.InviteAlreadyPendingException;
 import io.github.cassiocintra.users_management.domain.exception.InviteTokenNotFoundException;
 import io.github.cassiocintra.users_management.domain.exception.WorkspaceNotFoundException;

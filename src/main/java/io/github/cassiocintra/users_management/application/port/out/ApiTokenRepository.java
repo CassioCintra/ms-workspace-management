@@ -1,6 +1,6 @@
 package io.github.cassiocintra.users_management.application.port.out;
 
-import io.github.cassiocintra.users_management.domain.ApiToken;
+import io.github.cassiocintra.users_management.domain.token.ApiToken;
 
 import java.util.List;
 import java.util.Optional;

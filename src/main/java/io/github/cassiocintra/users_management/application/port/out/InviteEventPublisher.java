@@ -1,6 +1,6 @@
 package io.github.cassiocintra.users_management.application.port.out;
 
-import io.github.cassiocintra.users_management.domain.Invite;
+import io.github.cassiocintra.users_management.domain.invite.Invite;
 
 import java.util.UUID;
 

@@ -1,8 +1,8 @@
 package io.github.cassiocintra.users_management.adapter.out.persistence.entity;
 
-import io.github.cassiocintra.users_management.domain.Invite;
-import io.github.cassiocintra.users_management.domain.InviteStatus;
-import io.github.cassiocintra.users_management.domain.WorkspaceRole;
+import io.github.cassiocintra.users_management.domain.invite.Invite;
+import io.github.cassiocintra.users_management.domain.invite.InviteStatus;
+import io.github.cassiocintra.users_management.domain.workspace.WorkspaceRole;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

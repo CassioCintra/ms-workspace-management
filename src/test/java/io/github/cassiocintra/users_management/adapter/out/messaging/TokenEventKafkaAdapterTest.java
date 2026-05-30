@@ -1,6 +1,6 @@
 package io.github.cassiocintra.users_management.adapter.out.messaging;
 
-import io.github.cassiocintra.users_management.domain.ApiToken;
+import io.github.cassiocintra.users_management.domain.token.ApiToken;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

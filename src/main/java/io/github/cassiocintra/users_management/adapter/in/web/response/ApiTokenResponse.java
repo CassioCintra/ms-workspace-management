@@ -1,7 +1,7 @@
 package io.github.cassiocintra.users_management.adapter.in.web.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.github.cassiocintra.users_management.domain.ApiToken;
+import io.github.cassiocintra.users_management.domain.token.ApiToken;
 
 import java.time.Instant;
 import java.util.UUID;

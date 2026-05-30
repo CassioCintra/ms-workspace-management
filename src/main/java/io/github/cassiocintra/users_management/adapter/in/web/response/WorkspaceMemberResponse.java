@@ -1,7 +1,7 @@
 package io.github.cassiocintra.users_management.adapter.in.web.response;
 
-import io.github.cassiocintra.users_management.domain.WorkspaceMember;
-import io.github.cassiocintra.users_management.domain.WorkspaceRole;
+import io.github.cassiocintra.users_management.domain.workspace.WorkspaceMember;
+import io.github.cassiocintra.users_management.domain.workspace.WorkspaceRole;
 
 import java.time.Instant;
 

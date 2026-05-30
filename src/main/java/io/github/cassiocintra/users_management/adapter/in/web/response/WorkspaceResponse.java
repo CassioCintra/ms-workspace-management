@@ -1,6 +1,6 @@
 package io.github.cassiocintra.users_management.adapter.in.web.response;
 
-import io.github.cassiocintra.users_management.domain.Workspace;
+import io.github.cassiocintra.users_management.domain.workspace.Workspace;
 
 import java.time.Instant;
 import java.util.UUID;

@@ -1,8 +1,8 @@
 package io.github.cassiocintra.users_management.adapter.in.web.response;
 
 import io.github.cassiocintra.users_management.application.port.in.InviteUseCase.InviteInfo;
-import io.github.cassiocintra.users_management.domain.InviteStatus;
-import io.github.cassiocintra.users_management.domain.WorkspaceRole;
+import io.github.cassiocintra.users_management.domain.invite.InviteStatus;
+import io.github.cassiocintra.users_management.domain.workspace.WorkspaceRole;
 
 import java.time.Instant;
 
