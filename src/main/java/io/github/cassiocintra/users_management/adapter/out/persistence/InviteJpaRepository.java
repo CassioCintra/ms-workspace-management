@@ -11,5 +11,5 @@ public interface InviteJpaRepository extends JpaRepository<InviteEntity, UUID> {
 
     Optional<InviteEntity> findByToken(String token);
 
-    boolean existsByEmailAndStatus(String email, InviteStatus status);
+    boolean existsByWorkspaceIdAndEmailAndStatus(UUID workspaceId, String email, InviteStatus status);
 }

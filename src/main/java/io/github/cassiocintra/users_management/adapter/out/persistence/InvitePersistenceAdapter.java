@@ -1,12 +1,14 @@
 package io.github.cassiocintra.users_management.adapter.out.persistence;
 
 import io.github.cassiocintra.users_management.adapter.out.persistence.entity.InviteEntity;
+import io.github.cassiocintra.users_management.application.TenantContext;
 import io.github.cassiocintra.users_management.application.port.out.InviteRepository;
 import io.github.cassiocintra.users_management.domain.Invite;
 import io.github.cassiocintra.users_management.domain.InviteStatus;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Component
 public class InvitePersistenceAdapter implements InviteRepository {
@@ -19,7 +21,7 @@ public class InvitePersistenceAdapter implements InviteRepository {
 
     @Override
     public Invite save(Invite invite) {
-        return jpaRepository.save(InviteEntity.from(invite)).toDomain();
+        return jpaRepository.save(InviteEntity.from(workspaceId(), invite)).toDomain();
     }
 
     @Override
@@ -29,6 +31,10 @@ public class InvitePersistenceAdapter implements InviteRepository {
 
     @Override
     public boolean existsByEmailAndStatus(String email, InviteStatus status) {
-        return jpaRepository.existsByEmailAndStatus(email, status);
+        return jpaRepository.existsByWorkspaceIdAndEmailAndStatus(workspaceId(), email, status);
+    }
+
+    private UUID workspaceId() {
+        return UUID.fromString(TenantContext.getWorkspaceId());
     }
 }

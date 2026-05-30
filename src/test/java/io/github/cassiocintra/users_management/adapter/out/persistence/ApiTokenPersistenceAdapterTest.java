@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class ApiTokenPersistenceAdapterTest {
 
-    private static final String SCHEMA = "ws_test_tokens";
+    private UUID workspaceId;
 
     @MockitoBean
     JwtDecoder jwtDecoder;
@@ -39,22 +39,16 @@ class ApiTokenPersistenceAdapterTest {
 
     @BeforeEach
     void setUp() {
-        jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS " + SCHEMA);
-        jdbcTemplate.execute("""
-                CREATE TABLE IF NOT EXISTS %s.api_tokens (
-                    id           UUID         PRIMARY KEY,
-                    name         VARCHAR(255) NOT NULL,
-                    token_hash   VARCHAR(255) NOT NULL UNIQUE,
-                    last_used_at TIMESTAMP,
-                    revoked_at   TIMESTAMP,
-                    created_at   TIMESTAMP    NOT NULL DEFAULT NOW()
-                )""".formatted(SCHEMA));
-        jdbcTemplate.execute("TRUNCATE TABLE " + SCHEMA + ".api_tokens");
-        TenantContext.setTenantId(SCHEMA);
+        workspaceId = UUID.randomUUID();
+        jdbcTemplate.update("INSERT INTO workspaces (id, name, slug, owner_id) VALUES (?, ?, ?, ?)",
+                workspaceId, "Test Workspace", "test-" + workspaceId, "owner-1");
+        TenantContext.setWorkspaceId(workspaceId.toString());
     }
 
     @AfterEach
     void tearDown() {
+        jdbcTemplate.update("DELETE FROM api_tokens WHERE workspace_id = ?", workspaceId);
+        jdbcTemplate.update("DELETE FROM workspaces WHERE id = ?", workspaceId);
         TenantContext.clear();
     }
 

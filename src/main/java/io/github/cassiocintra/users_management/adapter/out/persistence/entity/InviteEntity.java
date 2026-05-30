@@ -30,6 +30,9 @@ public class InviteEntity {
     @Id
     private UUID id;
 
+    @Column(name = "workspace_id", nullable = false)
+    private UUID workspaceId;
+
     @Column(nullable = false)
     private String email;
 
@@ -50,9 +53,10 @@ public class InviteEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    public static InviteEntity from(Invite invite) {
+    public static InviteEntity from(UUID workspaceId, Invite invite) {
         return InviteEntity.builder()
                 .id(invite.getId())
+                .workspaceId(workspaceId)
                 .email(invite.getEmail())
                 .role(invite.getRole())
                 .token(invite.getToken())

@@ -33,7 +33,7 @@ class TenantExtractorFilterTest {
     }
 
     @Test
-    void shouldSetTenantAndUserDuringRequest() throws Exception {
+    void shouldSetWorkspaceIdAndUserDuringRequest() throws Exception {
         Jwt jwt = Jwt.withTokenValue("token")
                 .header("alg", "RS256")
                 .subject("user-456")
@@ -43,7 +43,6 @@ class TenantExtractorFilterTest {
                 .build();
         SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt));
 
-        AtomicReference<String> capturedTenant = new AtomicReference<>();
         AtomicReference<String> capturedUser = new AtomicReference<>();
         AtomicReference<String> capturedWorkspaceId = new AtomicReference<>();
 
@@ -51,13 +50,11 @@ class TenantExtractorFilterTest {
                 new MockHttpServletRequest(),
                 new MockHttpServletResponse(),
                 (req, res) -> {
-                    capturedTenant.set(TenantContext.getTenantId());
                     capturedUser.set(TenantContext.getUserId());
                     capturedWorkspaceId.set(TenantContext.getWorkspaceId());
                 }
         );
 
-        assertThat(capturedTenant.get()).isEqualTo("ws_550e8400_e29b_41d4_a716_446655440000");
         assertThat(capturedUser.get()).isEqualTo("user-456");
         assertThat(capturedWorkspaceId.get()).isEqualTo("550e8400-e29b-41d4-a716-446655440000");
     }
@@ -67,37 +64,33 @@ class TenantExtractorFilterTest {
         Jwt jwt = Jwt.withTokenValue("token")
                 .header("alg", "RS256")
                 .subject("user-456")
-                .claim("workspace_id", "ws-123")
+                .claim("workspace_id", "550e8400-e29b-41d4-a716-446655440000")
                 .issuedAt(Instant.now())
                 .expiresAt(Instant.now().plusSeconds(3600))
                 .build();
         SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt));
 
-        filter.doFilter(
-                new MockHttpServletRequest(),
-                new MockHttpServletResponse(),
-                (req, res) -> {}
-        );
+        filter.doFilter(new MockHttpServletRequest(), new MockHttpServletResponse(), (req, res) -> {});
 
-        assertThat(TenantContext.getTenantId()).isNull();
+        assertThat(TenantContext.getWorkspaceId()).isNull();
         assertThat(TenantContext.getUserId()).isNull();
     }
 
     @Test
-    void shouldNotSetTenantWhenNoAuthentication() throws Exception {
-        AtomicReference<String> capturedTenant = new AtomicReference<>();
+    void shouldNotSetWorkspaceWhenNoAuthentication() throws Exception {
+        AtomicReference<String> capturedWorkspaceId = new AtomicReference<>();
 
         filter.doFilter(
                 new MockHttpServletRequest(),
                 new MockHttpServletResponse(),
-                (req, res) -> capturedTenant.set(TenantContext.getTenantId())
+                (req, res) -> capturedWorkspaceId.set(TenantContext.getWorkspaceId())
         );
 
-        assertThat(capturedTenant.get()).isNull();
+        assertThat(capturedWorkspaceId.get()).isNull();
     }
 
     @Test
-    void shouldNotSetTenantWhenWorkspaceClaimAbsent() throws Exception {
+    void shouldNotSetWorkspaceWhenClaimAbsent() throws Exception {
         Jwt jwt = Jwt.withTokenValue("token")
                 .header("alg", "RS256")
                 .subject("user-456")
@@ -106,14 +99,14 @@ class TenantExtractorFilterTest {
                 .build();
         SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt));
 
-        AtomicReference<String> capturedTenant = new AtomicReference<>();
+        AtomicReference<String> capturedWorkspaceId = new AtomicReference<>();
 
         filter.doFilter(
                 new MockHttpServletRequest(),
                 new MockHttpServletResponse(),
-                (req, res) -> capturedTenant.set(TenantContext.getTenantId())
+                (req, res) -> capturedWorkspaceId.set(TenantContext.getWorkspaceId())
         );
 
-        assertThat(capturedTenant.get()).isNull();
+        assertThat(capturedWorkspaceId.get()).isNull();
     }
 }

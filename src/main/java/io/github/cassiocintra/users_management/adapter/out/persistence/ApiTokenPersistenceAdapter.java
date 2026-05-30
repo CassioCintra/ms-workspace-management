@@ -1,6 +1,7 @@
 package io.github.cassiocintra.users_management.adapter.out.persistence;
 
 import io.github.cassiocintra.users_management.adapter.out.persistence.entity.ApiTokenEntity;
+import io.github.cassiocintra.users_management.application.TenantContext;
 import io.github.cassiocintra.users_management.application.port.out.ApiTokenRepository;
 import io.github.cassiocintra.users_management.domain.ApiToken;
 import org.springframework.stereotype.Component;
@@ -20,16 +21,22 @@ public class ApiTokenPersistenceAdapter implements ApiTokenRepository {
 
     @Override
     public ApiToken save(ApiToken token) {
-        return jpaRepository.save(ApiTokenEntity.from(token)).toDomain();
+        return jpaRepository.save(ApiTokenEntity.from(workspaceId(), token)).toDomain();
     }
 
     @Override
     public List<ApiToken> findAll() {
-        return jpaRepository.findAll().stream().map(ApiTokenEntity::toDomain).toList();
+        return jpaRepository.findAllByWorkspaceId(workspaceId())
+                .stream().map(ApiTokenEntity::toDomain).toList();
     }
 
     @Override
     public Optional<ApiToken> findById(UUID id) {
-        return jpaRepository.findById(id).map(ApiTokenEntity::toDomain);
+        return jpaRepository.findByWorkspaceIdAndId(workspaceId(), id)
+                .map(ApiTokenEntity::toDomain);
+    }
+
+    private UUID workspaceId() {
+        return UUID.fromString(TenantContext.getWorkspaceId());
     }
 }

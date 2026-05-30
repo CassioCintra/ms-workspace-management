@@ -26,6 +26,9 @@ public class ApiTokenEntity {
     @Id
     private UUID id;
 
+    @Column(name = "workspace_id", nullable = false)
+    private UUID workspaceId;
+
     @Column(nullable = false)
     private String name;
 
@@ -41,9 +44,10 @@ public class ApiTokenEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    public static ApiTokenEntity from(ApiToken token) {
+    public static ApiTokenEntity from(UUID workspaceId, ApiToken token) {
         return ApiTokenEntity.builder()
                 .id(token.getId())
+                .workspaceId(workspaceId)
                 .name(token.getName())
                 .tokenHash(token.getTokenHash())
                 .lastUsedAt(token.getLastUsedAt())

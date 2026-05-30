@@ -3,10 +3,10 @@ package io.github.cassiocintra.users_management.adapter.out.persistence.entity;
 import io.github.cassiocintra.users_management.domain.WorkspaceMember;
 import io.github.cassiocintra.users_management.domain.WorkspaceRole;
 import jakarta.persistence.Column;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(name = "workspace_members")
@@ -25,9 +26,14 @@ import java.time.Instant;
 @Builder
 public class WorkspaceMemberEntity {
 
-    @Id
-    @Column(name = "user_id")
-    private String userId;
+    @EmbeddedId
+    private WorkspaceMemberId id;
+
+    @Column
+    private String email;
+
+    @Column
+    private String name;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -36,9 +42,11 @@ public class WorkspaceMemberEntity {
     @Column(name = "joined_at", nullable = false)
     private Instant joinedAt;
 
-    public static WorkspaceMemberEntity from(WorkspaceMember member) {
+    public static WorkspaceMemberEntity from(UUID workspaceId, WorkspaceMember member) {
         return WorkspaceMemberEntity.builder()
-                .userId(member.getUserId())
+                .id(new WorkspaceMemberId(workspaceId, member.getUserId()))
+                .email(member.getEmail())
+                .name(member.getName())
                 .role(member.getRole())
                 .joinedAt(member.getJoinedAt())
                 .build();
@@ -46,7 +54,9 @@ public class WorkspaceMemberEntity {
 
     public WorkspaceMember toDomain() {
         return WorkspaceMember.builder()
-                .userId(userId)
+                .userId(id.getUserId())
+                .email(email)
+                .name(name)
                 .role(role)
                 .joinedAt(joinedAt)
                 .build();

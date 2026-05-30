@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class InvitePersistenceAdapterTest {
 
-    private static final String SCHEMA = "ws_test_invites";
+    private UUID workspaceId;
 
     @MockitoBean
     JwtDecoder jwtDecoder;
@@ -40,23 +40,16 @@ class InvitePersistenceAdapterTest {
 
     @BeforeEach
     void setUp() {
-        jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS " + SCHEMA);
-        jdbcTemplate.execute("""
-                CREATE TABLE IF NOT EXISTS %s.invites (
-                    id         UUID         PRIMARY KEY,
-                    email      VARCHAR(255) NOT NULL,
-                    role       VARCHAR(50)  NOT NULL,
-                    token      VARCHAR(255) NOT NULL UNIQUE,
-                    expires_at TIMESTAMP    NOT NULL,
-                    status     VARCHAR(50)  NOT NULL DEFAULT 'PENDING',
-                    created_at TIMESTAMP    NOT NULL DEFAULT NOW()
-                )""".formatted(SCHEMA));
-        jdbcTemplate.execute("TRUNCATE TABLE " + SCHEMA + ".invites");
-        TenantContext.setTenantId(SCHEMA);
+        workspaceId = UUID.randomUUID();
+        jdbcTemplate.update("INSERT INTO workspaces (id, name, slug, owner_id) VALUES (?, ?, ?, ?)",
+                workspaceId, "Test Workspace", "test-" + workspaceId, "owner-1");
+        TenantContext.setWorkspaceId(workspaceId.toString());
     }
 
     @AfterEach
     void tearDown() {
+        jdbcTemplate.update("DELETE FROM invites WHERE workspace_id = ?", workspaceId);
+        jdbcTemplate.update("DELETE FROM workspaces WHERE id = ?", workspaceId);
         TenantContext.clear();
     }
 

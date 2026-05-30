@@ -18,6 +18,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -26,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class WorkspaceMemberPersistenceAdapterTest {
 
-    private static final String SCHEMA = "ws_test_members";
+    private UUID workspaceId;
 
     @MockitoBean
     JwtDecoder jwtDecoder;
@@ -39,28 +40,28 @@ class WorkspaceMemberPersistenceAdapterTest {
 
     @BeforeEach
     void setUp() {
-        jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS " + SCHEMA);
-        jdbcTemplate.execute("""
-                CREATE TABLE IF NOT EXISTS %s.workspace_members (
-                    user_id   VARCHAR(255) NOT NULL PRIMARY KEY,
-                    role      VARCHAR(50)  NOT NULL,
-                    joined_at TIMESTAMP    NOT NULL DEFAULT NOW()
-                )""".formatted(SCHEMA));
-        jdbcTemplate.execute("TRUNCATE TABLE " + SCHEMA + ".workspace_members");
-        TenantContext.setTenantId(SCHEMA);
+        workspaceId = UUID.randomUUID();
+        jdbcTemplate.update("INSERT INTO workspaces (id, name, slug, owner_id) VALUES (?, ?, ?, ?)",
+                workspaceId, "Test Workspace", "test-" + workspaceId, "owner-1");
+        TenantContext.setWorkspaceId(workspaceId.toString());
     }
 
     @AfterEach
     void tearDown() {
+        jdbcTemplate.update("DELETE FROM workspace_members WHERE workspace_id = ?", workspaceId);
+        jdbcTemplate.update("DELETE FROM workspaces WHERE id = ?", workspaceId);
         TenantContext.clear();
+    }
+
+    private WorkspaceMember member(String userId, WorkspaceRole role) {
+        return WorkspaceMember.builder()
+                .userId(userId).role(role).joinedAt(Instant.now()).build();
     }
 
     @Test
     void shouldSaveMemberAndFindAll() {
-        WorkspaceMember member = WorkspaceMember.builder()
-                .userId("user-1").role(WorkspaceRole.ADMIN).joinedAt(Instant.now()).build();
+        adapter.save(member("user-1", WorkspaceRole.ADMIN));
 
-        adapter.save(member);
         List<WorkspaceMember> members = adapter.findAll();
 
         assertThat(members).hasSize(1);
@@ -70,7 +71,7 @@ class WorkspaceMemberPersistenceAdapterTest {
 
     @Test
     void shouldFindMemberByUserId() {
-        adapter.save(WorkspaceMember.builder().userId("user-1").role(WorkspaceRole.EDITOR).joinedAt(Instant.now()).build());
+        adapter.save(member("user-1", WorkspaceRole.EDITOR));
 
         Optional<WorkspaceMember> found = adapter.findByUserId("user-1");
 
@@ -85,20 +86,18 @@ class WorkspaceMemberPersistenceAdapterTest {
 
     @Test
     void shouldUpdateMemberRole() {
-        WorkspaceMember member = WorkspaceMember.builder()
-                .userId("user-1").role(WorkspaceRole.VIEWER).joinedAt(Instant.now()).build();
-        adapter.save(member);
+        WorkspaceMember m = adapter.save(member("user-1", WorkspaceRole.VIEWER));
 
-        adapter.save(member.withRole(WorkspaceRole.ADMIN));
+        adapter.save(m.withRole(WorkspaceRole.ADMIN));
 
         assertThat(adapter.findByUserId("user-1"))
                 .isPresent()
-                .hasValueSatisfying(m -> assertThat(m.getRole()).isEqualTo(WorkspaceRole.ADMIN));
+                .hasValueSatisfying(it -> assertThat(it.getRole()).isEqualTo(WorkspaceRole.ADMIN));
     }
 
     @Test
     void shouldDeleteMemberByUserId() {
-        adapter.save(WorkspaceMember.builder().userId("user-1").role(WorkspaceRole.VIEWER).joinedAt(Instant.now()).build());
+        adapter.save(member("user-1", WorkspaceRole.VIEWER));
 
         adapter.deleteByUserId("user-1");
 
@@ -108,5 +107,22 @@ class WorkspaceMemberPersistenceAdapterTest {
     @Test
     void shouldReturnEmptyListWhenNoMembers() {
         assertThat(adapter.findAll()).isEmpty();
+    }
+
+    @Test
+    void shouldIsolateMembersByWorkspace() {
+        UUID otherWorkspaceId = UUID.randomUUID();
+        jdbcTemplate.update("INSERT INTO workspaces (id, name, slug, owner_id) VALUES (?, ?, ?, ?)",
+                otherWorkspaceId, "Other Workspace", "other-" + otherWorkspaceId, "owner-2");
+        jdbcTemplate.update("INSERT INTO workspace_members (workspace_id, user_id, role, joined_at) VALUES (?, ?, ?, NOW())",
+                otherWorkspaceId, "user-other", "ADMIN");
+
+        adapter.save(member("user-1", WorkspaceRole.ADMIN));
+
+        assertThat(adapter.findAll()).hasSize(1)
+                .extracting(WorkspaceMember::getUserId).containsOnly("user-1");
+
+        jdbcTemplate.update("DELETE FROM workspace_members WHERE workspace_id = ?", otherWorkspaceId);
+        jdbcTemplate.update("DELETE FROM workspaces WHERE id = ?", otherWorkspaceId);
     }
 }
