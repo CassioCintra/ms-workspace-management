@@ -17,26 +17,45 @@ Microserviço responsável pela gestão de workspaces, RBAC, convites por e-mail
 | Migrations        | Flyway                            |
 | Event Bus         | Kafka 4.0 (KRaft, sem ZooKeeper)  |
 | Autenticação      | Keycloak (OAuth2 Resource Server) |
+| E-mail            | Resend (SMTP) / MailHog (dev)     |
 | Testes            | JUnit 5 · Mockito · Testcontainers|
 
 ---
 
 ## Arquitetura
 
-O serviço segue **arquitetura hexagonal** com as seguintes camadas:
+O serviço segue **arquitetura hexagonal** com pacotes organizados por feature dentro de cada camada:
 
 ```
-domain/                         ← entidades, enums, exceções (JDK puro)
+domain/
+  workspace/    ← Workspace, WorkspaceMember, WorkspaceRole
+  invite/       ← Invite, InviteStatus
+  token/        ← ApiToken
+  exception/    ← exceções de domínio
+
 application/
-  TenantContext.java            ← contexto de workspace e usuário por request (ThreadLocal)
-  port/in/                      ← interfaces de casos de uso
-  port/out/                     ← interfaces de repositórios e publishers
-  service/                      ← orquestração dos casos de uso
+  TenantContext.java   ← contexto de workspace e usuário por request (ThreadLocal)
+  port/in/             ← interfaces de casos de uso
+  port/out/            ← interfaces de repositórios e publishers
+  service/             ← orquestração dos casos de uso
+
 adapter/
-  in/web/                       ← controllers REST, filtros, exception handler
-  out/persistence/              ← JPA entities, Spring Data repositories
-  out/messaging/                ← produtores Kafka
-  out/mail/                     ← envio de e-mail via JavaMailSender
+  in/web/
+    workspace/  ← WorkspaceController, InviteController
+    invite/     ← InviteAcceptController
+    token/      ← ApiTokenController
+    config/     ← SecurityConfig
+    filter/     ← TenantExtractorFilter, CorrelatorFilter
+    request/    ← DTOs de entrada
+    response/   ← DTOs de saída
+  out/
+    persistence/
+      workspace/ ← adapters e repositórios JPA de workspace
+      invite/    ← adapters e repositórios JPA de invite
+      token/     ← adapters e repositórios JPA de token
+      entity/    ← entidades JPA
+    messaging/  ← produtores Kafka
+    mail/       ← envio de e-mail via Resend/JavaMailSender
 ```
 
 ### Regra de dependências
@@ -60,20 +79,20 @@ Todas as tabelas vivem no schema `public`. O isolamento por workspace é feito v
 
 ### Como o contexto de workspace funciona
 
+Controllers com `{id}` no path (ex: `/workspaces/{id}/invites`) setam o `TenantContext` diretamente a partir do path variable, eliminando a dependência do claim `workspace_id` no JWT para rotas workspace-scoped.
+
 ```
 Request HTTP  →  BearerTokenAuthenticationFilter  (valida JWT com Keycloak)
               →  TenantExtractorFilter             (lê claims do JWT)
-                   TenantContext.setWorkspaceId("uuid")
                    TenantContext.setUserId("sub")
                    TenantContext.setUserEmail("email")
                    TenantContext.setUserName("name")
+                   TenantContext.setWorkspaceId("uuid")  ← JWT ou path variable
               →  Adapters de persistência
                    workspaceId = UUID.fromString(TenantContext.getWorkspaceId())
                    → todas as queries filtram por workspace_id automaticamente
               →  finally: TenantContext.clear()
 ```
-
-Endpoints públicos que precisam do workspace (ex: aceitar convite) resolvem o `workspaceId` a partir da tabela `invite_tokens` e setam o `TenantContext` manualmente antes das operações de persistência.
 
 ---
 
@@ -92,19 +111,19 @@ Base path: `/users/v1`
 
 ### Convites
 
-| Método  | Rota                          | Descrição                               | Auth         |
-|---------|-------------------------------|-----------------------------------------|--------------|
-| `POST`  | `/workspaces/{id}/invites`    | Convida por e-mail                      | JWT (admin)  |
-| `GET`   | `/invites/{token}/info`       | Retorna metadados do convite            | público      |
-| `POST`  | `/invites/accept`             | Aceita o convite e entra no workspace   | JWT          |
+| Método  | Rota                             | Descrição                               | Auth         |
+|---------|----------------------------------|-----------------------------------------|--------------|
+| `POST`  | `/workspaces/{id}/invites`       | Convida por e-mail                      | JWT (admin)  |
+| `GET`   | `/invites/{token}/info`          | Retorna metadados do convite            | público      |
+| `POST`  | `/invites/accept`                | Aceita o convite e entra no workspace   | JWT          |
 
 ### Tokens de API
 
-| Método   | Rota              | Descrição                          | Auth |
-|----------|-------------------|------------------------------------|------|
-| `GET`    | `/tokens`         | Lista tokens do workspace          | JWT  |
-| `POST`   | `/tokens`         | Cria token (retorna plain uma vez) | JWT  |
-| `DELETE` | `/tokens/{id}`    | Revoga token                       | JWT  |
+| Método   | Rota                              | Descrição                          | Auth |
+|----------|-----------------------------------|------------------------------------|------|
+| `GET`    | `/workspaces/{id}/tokens`         | Lista tokens do workspace          | JWT  |
+| `POST`   | `/workspaces/{id}/tokens`         | Cria token (retorna plain uma vez) | JWT  |
+| `DELETE` | `/workspaces/{id}/tokens/{tokenId}` | Revoga token                     | JWT  |
 
 > Endpoints de autenticação (`/auth/*`) são responsabilidade do **Keycloak**, roteados diretamente pelo API Gateway.
 
@@ -123,7 +142,7 @@ Base path: `/users/v1`
 Tokens são gerados com `SecureRandom` (32 bytes → Base64url). Apenas o hash SHA-256 é armazenado — o valor original é retornado **uma única vez** na criação e nunca mais recuperado.
 
 ```json
-// POST /tokens → 201 Created
+// POST /workspaces/{id}/tokens → 201 Created
 {
   "id": "...",
   "name": "ci-token",
@@ -131,7 +150,7 @@ Tokens são gerados com `SecureRandom` (32 bytes → Base64url). Apenas o hash S
   "createdAt": "..."
 }
 
-// GET /tokens → 200 OK
+// GET /workspaces/{id}/tokens → 200 OK
 [
   {
     "id": "...",
@@ -146,15 +165,33 @@ Tokens são gerados com `SecureRandom` (32 bytes → Base64url). Apenas o hash S
 
 ## Convites
 
-Ao convidar um usuário por e-mail:
-- Um token UUID é gerado, salvo em `invites` (tenant) e em `invite_tokens` (public, com vínculo ao workspace)
-- O link de aceite é enviado por e-mail: `{base-url}/invites/{token}/info`
-- O convite expira em **72 horas**
-- Não é possível ter dois convites `PENDING` para o mesmo e-mail no mesmo workspace (HTTP 409)
+Fluxo completo de convite via e-mail:
 
-Fluxo de aceite:
-1. `GET /invites/{token}/info` — qualquer pessoa com o link vê os metadados antes de autenticar
-2. `POST /invites/accept` — usuário autenticado aceita; o serviço valida token, expiração e correspondência de e-mail com o JWT, adiciona o membro e invalida o token
+1. **Admin envia convite** → `POST /workspaces/{id}/invites`
+   - Token UUID gerado, salvo em `invites` e `invite_tokens`
+   - E-mail HTML enviado via Resend com link para o frontend: `{frontend-url}/invites/{token}`
+   - Evento `user.invited` publicado no Kafka
+   - Convite expira em **72 horas**; duplicata PENDING para mesmo e-mail retorna HTTP 409
+
+2. **Convidado abre o link** → `GET /invites/{token}/info` (público, sem autenticação)
+   - Frontend exibe workspace, papel e expiração
+
+3. **Convidado se registra/autentica** no Keycloak
+   - Auto-registro habilitado no realm (`registrationAllowed=true`)
+
+4. **Convidado aceita** → `POST /invites/accept`
+   - Valida: token existente, status PENDING, não expirado, e-mail do JWT == e-mail do convite
+   - Adiciona membro ao workspace, marca convite como ACCEPTED, invalida o token
+
+---
+
+## E-mail de convite
+
+Template HTML responsivo em `src/main/resources/templates/email/invite.html`, renderizado com substituição de placeholders em `InviteMailAdapter`. Exibe workspace, papel, expiração e botão de aceite apontando para o frontend.
+
+Configuração:
+- **Desenvolvimento:** MailHog (`localhost:1025`) — captura e-mails localmente em `http://localhost:8025`
+- **Produção:** Resend (`smtp.resend.com:465`) via `RESEND_API_KEY`
 
 ---
 
@@ -165,21 +202,9 @@ Fluxo de aceite:
 | `user.invited`  | `InviteEventKafkaAdapter` | ms-audit      | `workspaceId`, `inviteeEmail`, `role`, `invitedBy`        |
 | `token.revoked` | `TokenEventKafkaAdapter`  | ms-audit      | `workspaceId`, `tokenId`, `tokenName`, `revokedBy`        |
 
-Ambos os eventos seguem o formato:
-```json
-{
-  "action": "INVITED | REVOKED",
-  "workspaceId": "uuid",
-  "...",
-  "invitedAt | revokedAt": "2026-05-29T..."
-}
-```
-
 ---
 
 ## Migrations Flyway
-
-Todas as migrations ficam em `db/migration/` e são executadas pelo Flyway na inicialização da aplicação.
 
 | Versão | Arquivo                                  | Conteúdo                                              |
 |--------|------------------------------------------|-------------------------------------------------------|
@@ -201,10 +226,12 @@ spring:
         jwt:
           issuer-uri: http://localhost:8080/realms/ms-users-management
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: localhost:9094   # porta externa do container
   mail:
-    host: localhost
-    port: 1025
+    host: smtp.resend.com               # ou localhost para dev (MailHog)
+    port: 465
+    username: resend
+    password: ${RESEND_API_KEY}
 
 users:
   kafka:
@@ -213,7 +240,10 @@ users:
       token-revoked: token.revoked
   invite:
     base-url: http://localhost:8082/users/v1
+    frontend-url: http://app.switchboard.io  # URL do frontend para links do e-mail
     expiration-hours: 72
+  mail:
+    from: "Switchboard <onboarding@resend.dev>"
 
 server:
   port: 8082
