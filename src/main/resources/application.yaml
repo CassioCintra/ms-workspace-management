@@ -1,7 +1,7 @@
 #file: noinspection YAMLSchemaValidation,SpellCheckingInspection
 spring:
   application:
-    name: ms-users-management
+    name: ms-workspace-management
   docker:
     compose:
       enabled: false
@@ -27,7 +27,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8080/realms/ms-users-management
+          issuer-uri: http://ms-auth:9000
   kafka:
     bootstrap-servers: localhost:9094
   mail:

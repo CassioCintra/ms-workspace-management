@@ -9,10 +9,10 @@
 		<relativePath/>
 	</parent>
 	<groupId>io.github.cassiocintra</groupId>
-	<artifactId>ms-users-management</artifactId>
+	<artifactId>ms-workspace-management</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>ms-users-management</name>
-	<description>ms-users-management</description>
+	<name>ms-workspace-management</name>
+	<description>ms-workspace-management</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -30,7 +30,7 @@
 		<java.version>25</java.version>
 		<postgresql.version>42.7.11</postgresql.version>
 		<sonar.organization>cassiocintra</sonar.organization>
-		<sonar.projectKey>CassioCintra_ms-users-management</sonar.projectKey>
+		<sonar.projectKey>CassioCintra_ms-workspace-management</sonar.projectKey>
 	</properties>
 	<dependencies>
 		<dependency>
