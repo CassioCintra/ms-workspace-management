@@ -1,7 +1,10 @@
 #file: noinspection YAMLSchemaValidation,SpellCheckingInspection
 spring:
   application:
-    name: ms-users-management
+    name: ms-workspace-management
+  docker:
+    compose:
+      enabled: false
   datasource:
     url: jdbc:postgresql://localhost:5432/ms_users_management
     username: postgres
@@ -14,8 +17,6 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        multiTenancy: SCHEMA
   flyway:
     enabled: true
     locations: classpath:db/migration
@@ -26,18 +27,26 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8080/realms/ms-users-management
+          issuer-uri: http://ms-auth:9000
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: localhost:9094
   mail:
-    host: localhost
-    port: 1025
+    host: smtp.resend.com
+    port: 465
+    username: resend
+    password: ${RESEND_API_KEY:""}
     properties:
-      mail:
-        smtp:
-          auth: false
-          starttls:
-            enable: false
+      mail.smtp.auth: true
+      mail.smtp.ssl.enable: true
+#  mail:
+#    host: localhost
+#    port: 1025
+#    properties:
+#      mail:
+#        smtp:
+#          auth: false
+#          starttls:
+#            enable: false
 
 users:
   kafka:
@@ -46,7 +55,10 @@ users:
       token-revoked: token.revoked
   invite:
     base-url: http://localhost:8082/users/v1
+    frontend-url: http://app.switchboard.io
     expiration-hours: 72
+  mail:
+    from: "Switchboard <onboarding@resend.dev>"
 
 logging:
   pattern:
