@@ -269,7 +269,8 @@ server:
 | Persistence (integr.) | Testcontainers (PostgreSQL real)     | `WorkspaceMemberPersistenceAdapterTest` |
 | Messaging (unit)      | Mockito + `ReflectionTestUtils`      | `InviteEventKafkaAdapterTest`           |
 | Web (slice)           | `@WebMvcTest` + `@WithMockUser`      | `WorkspaceControllerTest`               |
-| Smoke test            | Testcontainers (PostgreSQL + Kafka)  | `MsUsersManagementApplicationTests`    |
+| Smoke test            | Testcontainers (PostgreSQL + Kafka)  | `MsWorkspaceManagementApplicationTests` |
+| OpenAPI spec          | `@SpringBootTest` + MockMvc + Testcontainers | `OpenApiSpecGeneratorTest`      |
 
 > Nunca usa H2 ou bancos in-memory — todos os testes de persistência rodam contra PostgreSQL real via Testcontainers.
 
@@ -278,13 +279,15 @@ server:
 ## Contexto no ecossistema Switchboard
 
 ```
-Fase 1 — ms-feature-flags       ✅ concluída
-Fase 2 — ms-users-management    ✅ concluída
-Fase 3 — ms-auth                ✅ concluída
+Fase 1 — ms-feature-flags          ✅ concluída
+Fase 2 — ms-workspace-management   ✅ concluída
+Fase 3 — ms-auth                   ✅ concluída
 Fase 3.1 — adaptação para ms-auth  ✅ este serviço, concluída
-Fase 4 — Spring Cloud Gateway   ⏳
-Fase 5 — ms-audit               ⏳
-Fase 6 — ms-dashboard (BFF)     ⏳
+Fase 4 — Spring Cloud Gateway      ✅ concluída
+Fase 4.1 — OpenAPI specs + pipelines ✅ este serviço, concluída
+Fase 4.2 — Dockerfiles             ⏳
+Fase 5 — ms-audit                  ⏳
+Fase 6 — ms-dashboard (BFF)        ⏳
 ```
 
 Documentação completa da plataforma: [`platform-ops/docs/architecture`](../platform-ops/docs/architecture)
