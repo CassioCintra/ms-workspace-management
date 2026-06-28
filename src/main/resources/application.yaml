@@ -6,9 +6,9 @@ spring:
     compose:
       enabled: false
   datasource:
-    url: jdbc:postgresql://localhost:5432/ms_users_management
-    username: postgres
-    password: postgres
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/ms_workspace_management}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -27,9 +27,9 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://ms-auth:9000
+          issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUERURI:http://localhost:9000}
   kafka:
-    bootstrap-servers: localhost:9094
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAPSERVERS:localhost:9094}
   mail:
     host: smtp.resend.com
     port: 465
