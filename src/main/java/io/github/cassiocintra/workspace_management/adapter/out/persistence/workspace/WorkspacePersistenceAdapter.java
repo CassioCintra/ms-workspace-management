@@ -26,4 +26,9 @@ public class WorkspacePersistenceAdapter implements WorkspaceRepository {
     public Optional<Workspace> findById(UUID id) {
         return jpaRepository.findById(id).map(WorkspaceEntity::toDomain);
     }
+
+    @Override
+    public boolean existsBySlug(String slug) {
+        return jpaRepository.existsBySlug(slug);
+    }
 }

@@ -66,6 +66,11 @@ logging:
   level:
     io.github.cassiocintra: DEBUG
 
+management:
+  health:
+    mail:
+      enabled: false
+
 info:
   app:
     version: "@project.version@"

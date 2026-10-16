@@ -14,6 +14,7 @@ import io.github.cassiocintra.workspace_management.domain.workspace.WorkspaceMem
 import io.github.cassiocintra.workspace_management.domain.workspace.WorkspaceRole;
 import io.github.cassiocintra.workspace_management.domain.exception.MemberNotFoundException;
 import io.github.cassiocintra.workspace_management.domain.exception.WorkspaceNotFoundException;
+import io.github.cassiocintra.workspace_management.domain.exception.WorkspaceSlugAlreadyExistsException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -87,6 +88,18 @@ class WorkspaceControllerTest {
                 .andExpect(header().exists(CorrelatorFilter.HEADER));
     }
 
+    @Test
+    @WithMockUser
+    void shouldReturn409WhenSlugAlreadyExists() throws Exception {
+        when(workspaceUseCase.createWorkspace(any())).thenThrow(WorkspaceSlugAlreadyExistsException.alreadyExists("acme"));
+
+        mockMvc.perform(post("/workspaces")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new CreateWorkspaceRequest("Acme", "acme"))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409));
+    }
+
     // ── GET /workspaces/{id}/members ──────────────────────────────────────────
 
     @Test
@@ -156,5 +169,31 @@ class WorkspaceControllerTest {
                 .andExpect(status().isNoContent());
 
         verify(workspaceUseCase).removeMember(any());
+    }
+
+    // ── Request errors ────────────────────────────────────────────────────────
+
+    @Test
+    @WithMockUser
+    void shouldReturn400WhenTheBodyIsInvalid() throws Exception {
+        mockMvc.perform(post("/workspaces").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    @WithMockUser
+    void shouldReturn400WhenTheBodyIsMalformed() throws Exception {
+        mockMvc.perform(post("/workspaces").contentType(MediaType.APPLICATION_JSON).content("{x"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    @WithMockUser
+    void shouldReturn404ForAnUnknownPath() throws Exception {
+        mockMvc.perform(get("/unknown"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
     }
 }
