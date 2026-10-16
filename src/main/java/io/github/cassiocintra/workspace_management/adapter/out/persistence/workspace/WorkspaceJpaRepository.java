@@ -5,4 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.UUID;
 
-public interface WorkspaceJpaRepository extends JpaRepository<WorkspaceEntity, UUID> {}
+public interface WorkspaceJpaRepository extends JpaRepository<WorkspaceEntity, UUID> {
+
+    boolean existsBySlug(String slug);
+}

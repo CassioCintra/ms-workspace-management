@@ -10,4 +10,6 @@ public interface WorkspaceRepository {
     Workspace save(Workspace workspace);
 
     Optional<Workspace> findById(UUID id);
+
+    boolean existsBySlug(String slug);
 }

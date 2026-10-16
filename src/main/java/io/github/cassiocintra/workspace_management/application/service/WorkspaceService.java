@@ -9,6 +9,7 @@ import io.github.cassiocintra.workspace_management.domain.workspace.WorkspaceMem
 import io.github.cassiocintra.workspace_management.domain.workspace.WorkspaceRole;
 import io.github.cassiocintra.workspace_management.domain.exception.MemberNotFoundException;
 import io.github.cassiocintra.workspace_management.domain.exception.WorkspaceNotFoundException;
+import io.github.cassiocintra.workspace_management.domain.exception.WorkspaceSlugAlreadyExistsException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +32,10 @@ public class WorkspaceService implements WorkspaceUseCase {
 
     @Override
     public Workspace createWorkspace(CreateWorkspaceCommand command) {
+        if (workspaceRepository.existsBySlug(command.slug())) {
+            throw WorkspaceSlugAlreadyExistsException.alreadyExists(command.slug());
+        }
+
         Workspace workspace = Workspace.builder()
                 .id(UUID.randomUUID())
                 .name(command.name())

@@ -9,6 +9,7 @@ import io.github.cassiocintra.workspace_management.domain.exception.ApiTokenNotF
 import io.github.cassiocintra.workspace_management.domain.exception.InviteAlreadyPendingException;
 import io.github.cassiocintra.workspace_management.domain.exception.MemberNotFoundException;
 import io.github.cassiocintra.workspace_management.domain.exception.WorkspaceNotFoundException;
+import io.github.cassiocintra.workspace_management.domain.exception.WorkspaceSlugAlreadyExistsException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.TypeMismatchException;
@@ -84,6 +85,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(ErrorResponse.of(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI()));
+    }
+
+    @ExceptionHandler(WorkspaceSlugAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleSlugConflict(WorkspaceSlugAlreadyExistsException ex, HttpServletRequest request) {
+        log.warn("Workspace slug conflict [uri={}, message={}]", request.getRequestURI(), ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ErrorResponse.of(HttpStatus.CONFLICT, ex.getMessage(), request.getRequestURI()));
     }
 
     @ExceptionHandler({HttpMessageNotReadableException.class, TypeMismatchException.class})

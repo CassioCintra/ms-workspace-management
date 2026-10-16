@@ -10,6 +10,7 @@ import io.github.cassiocintra.workspace_management.domain.workspace.WorkspaceMem
 import io.github.cassiocintra.workspace_management.domain.workspace.WorkspaceRole;
 import io.github.cassiocintra.workspace_management.domain.exception.MemberNotFoundException;
 import io.github.cassiocintra.workspace_management.domain.exception.WorkspaceNotFoundException;
+import io.github.cassiocintra.workspace_management.domain.exception.WorkspaceSlugAlreadyExistsException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -73,6 +74,17 @@ class WorkspaceServiceTest {
         verify(workspaceMemberRepository).save(captor.capture());
         assertThat(captor.getValue().getUserId()).isEqualTo("user-1");
         assertThat(captor.getValue().getRole()).isEqualTo(WorkspaceRole.ADMIN);
+    }
+
+    @Test
+    void shouldRejectWorkspaceWhenSlugAlreadyExists() {
+        when(workspaceRepository.existsBySlug("acme")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.createWorkspace(new CreateWorkspaceCommand("Acme", "acme", "user-1", "user1@acme.com", "User One")))
+                .isInstanceOf(WorkspaceSlugAlreadyExistsException.class);
+
+        verify(workspaceRepository, never()).save(any());
+        verifyNoInteractions(workspaceMemberRepository);
     }
 
     // ── LIST MEMBERS ──────────────────────────────────────────────────────────
