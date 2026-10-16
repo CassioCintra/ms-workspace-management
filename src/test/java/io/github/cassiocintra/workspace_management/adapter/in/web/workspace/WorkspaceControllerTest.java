@@ -157,4 +157,30 @@ class WorkspaceControllerTest {
 
         verify(workspaceUseCase).removeMember(any());
     }
+
+    // ── Request errors ────────────────────────────────────────────────────────
+
+    @Test
+    @WithMockUser
+    void shouldReturn400WhenTheBodyIsInvalid() throws Exception {
+        mockMvc.perform(post("/workspaces").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    @WithMockUser
+    void shouldReturn400WhenTheBodyIsMalformed() throws Exception {
+        mockMvc.perform(post("/workspaces").contentType(MediaType.APPLICATION_JSON).content("{x"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    @WithMockUser
+    void shouldReturn404ForAnUnknownPath() throws Exception {
+        mockMvc.perform(get("/unknown"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
+    }
 }
